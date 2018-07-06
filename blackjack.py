@@ -25,6 +25,17 @@ def place_ya_bets(money):
             print('Invalid money amount')
 
 
+def payout(player_bet_amount, result):
+    if result == 'player wins':
+        return player_bet_amount
+    elif result == 'dealer wins':
+        return -player_bet_amount
+    elif result == 'push':
+        return 0
+    elif result == 'Blackjack':
+        return player_bet_amount * 1.5
+
+
 def build_deck():  #creates the deck
     cards = []
     for i in range(2, 11):
@@ -142,41 +153,48 @@ def winner(player_hand_sum, dealer_hand_sum, player_hand, dealer_hand):
     if dealer_hand_sum > 21 and player_hand_sum <= 21:
         print('Dealer has busted with a deck of {}!  Player wins! :D'.format(
             dealer_hand_str))
+        return 'player wins'
     elif dealer_hand_sum < player_hand_sum <= 21:
         print(
             'Player Wins with a hand of {} against a dealer hand of {}'.format(
                 player_hand_str, dealer_hand_str))
+        return 'player wins'
     elif player_hand_sum < dealer_hand_sum <= 21:
         print('\nDealer wins with a hand of {} against your hand of {}. :('.
               format(dealer_hand_str, player_hand_str))
+        return 'dealer wins'
+    elif player_hand_sum == 21:
+        return 'Blackjack'
     elif player_hand_sum == dealer_hand_sum:
         print('push')
+        return 'push'
 
 
-def blackjack():
+def blackjack():  #
     continue_game = True
     while continue_game:
         money = find_player_bank_account('bank_account.txt')
         player_bet_amount = place_ya_bets(money)
-        money_taken_out = change_bank_account('bank_account.txt',
-                                              player_bet_amount, money)
         cards = build_deck()
         shuffled_cards = shuffle_deck(cards)
         player_hand = round_start_player(
             shuffled_cards)  #deals 2 cards to player
+        player_hand = {'money': 0, 'hand': round_start_player(shuffled_cards)}
         dealer_hand = round_start_dealer(
             shuffled_cards)  #deals 2 cards to dealer
         player_hand_sum = game_play_player(dealer_hand, player_hand,
                                            shuffled_cards)
         dealer_sum = game_play_dealer(dealer_hand, shuffled_cards,
                                       player_hand_sum)
-        winner(player_hand_sum, dealer_sum, player_hand, dealer_hand)
+        result = winner(player_hand_sum, dealer_sum, player_hand, dealer_hand)
+        game_payout = payout(player_bet_amount, result)
+        change_money_amount('bank_account.txt', game_payout, money)
         continue_game = play_again()
 
 
-def change_bank_account(file1, player_bet_amount, money):
+def change_money_amount(file1, game_payout, money):
     with open(file1, 'w') as file:
-        file.write(str(money - player_bet_amount))
+        file.write(str(money + game_payout))
 
 
 def play_again():
