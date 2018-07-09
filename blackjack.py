@@ -21,6 +21,8 @@ def place_ya_bets(money):
                 print(
                     "You are trying to bet more than you have.  If this was any other casino, I wouldn't be warning you...\n\n"
                 )
+            else:
+                print('bet is too low for this table')
         else:
             print('Invalid money amount')
 
@@ -84,9 +86,11 @@ def get_hand_total(hand):  #adds total of deck with ace rules
             return non_aces_total + 4
 
 
-def if_blackjack(hand_sum):
-    if hand_sum == 21:
+def is_blackjack(hand):  #if player's first hand is equal to 21
+    if 10 in hand and 'Ace' in hand and len(hand) == 2:
         return True
+    else:
+        return False
 
 
 def round_start_player(cards):  # starting each round for player
@@ -119,7 +123,7 @@ def hit_me(player_hand, card):
     player_hand.append(card)
 
 
-def game_play_player(dealer_hand, player_hand, cards):
+def gameplay_player(dealer_hand, player_hand, cards):
     while True:
         player_hand_sum = get_hand_total(player_hand)
         print('\n\nYour cards : {}\n'.format(', '.join(map(str, player_hand))))
@@ -127,7 +131,7 @@ def game_play_player(dealer_hand, player_hand, cards):
         if player_hand_sum > 21:
             print('\nbust')
             return player_hand_sum
-        if if_blackjack(player_hand_sum):
+        if is_blackjack(player_hand):
             print('Blackjack!')
             return player_hand_sum
         choice = input_hit_or_stand()
@@ -143,13 +147,12 @@ def game_play_dealer(dealer_hand, cards, player_hand_sum):
         dealer_hand_total = get_hand_total(dealer_hand)
         if dealer_hand_total >= 17 or dealer_hand_total > player_hand_sum:
             break
-        dealer_hand.append(cards.pop(0))
+        hit_me(dealer_hand, cards.pop(0))
     return dealer_hand_total
 
 
-def winner(player_hand_sum, dealer_hand_sum, player_hand, dealer_hand):
-    player_hand_str = ', '.join(map(str, player_hand))
-    dealer_hand_str = ', '.join(map(str, dealer_hand))
+def norm_win_lose_conditions(player_hand_sum, dealer_hand_sum, player_hand_str,
+                             dealer_hand_str):
     if dealer_hand_sum > 21 and player_hand_sum <= 21:
         print('Dealer has busted with a deck of {}!  Player wins! :D'.format(
             dealer_hand_str))
@@ -163,11 +166,24 @@ def winner(player_hand_sum, dealer_hand_sum, player_hand, dealer_hand):
         print('\nDealer wins with a hand of {} against your hand of {}. :('.
               format(dealer_hand_str, player_hand_str))
         return 'dealer wins'
-    elif player_hand_sum == 21:
+
+
+def winner(player_hand_sum, dealer_hand_sum, player_hand, dealer_hand):
+    player_hand_str = ', '.join(map(str, player_hand))
+    dealer_hand_str = ', '.join(map(str, dealer_hand))
+    push = player_hand_sum == dealer_hand_sum or (is_blackjack(player_hand) and
+                                                  is_blackjack(dealer_hand))
+    if is_blackjack(player_hand) and not is_blackjack(dealer_hand):
+        print('Player wins via blackjack')
         return 'Blackjack'
-    elif player_hand_sum == dealer_hand_sum:
+    elif is_blackjack(dealer_hand) and not is_blackjack(player_hand):
+        print('Player loses to dealer via blackjack')
+        return 'dealer wins'
+    elif push:
         print('push')
         return 'push'
+    return norm_win_lose_conditions(player_hand_sum, dealer_hand_sum,
+                                    player_hand_str, dealer_hand_str)
 
 
 def blackjack():  #
@@ -179,11 +195,11 @@ def blackjack():  #
         shuffled_cards = shuffle_deck(cards)
         player_hand = round_start_player(
             shuffled_cards)  #deals 2 cards to player
-        player_hand = {'money': 0, 'hand': round_start_player(shuffled_cards)}
+        # player_hand = {'money': 0, 'hand': round_start_player(shuffled_cards)}
         dealer_hand = round_start_dealer(
             shuffled_cards)  #deals 2 cards to dealer
-        player_hand_sum = game_play_player(dealer_hand, player_hand,
-                                           shuffled_cards)
+        player_hand_sum = gameplay_player(dealer_hand, player_hand,
+                                          shuffled_cards)
         dealer_sum = game_play_dealer(dealer_hand, shuffled_cards,
                                       player_hand_sum)
         result = winner(player_hand_sum, dealer_sum, player_hand, dealer_hand)
